@@ -572,7 +572,7 @@ def create_parser():
         type=str,
         action='append',
         help=(
-            'Add the creator\'s personal name to the creator field in SBOM.'
+            'The person(s) who creat SBOM'
         ),
         required=False,
         default=[],
@@ -582,7 +582,7 @@ def create_parser():
         type=str,
         action='append',
         help=(
-            'Add creator\'s personal email address. '
+            'The email address of SBOM creator. '
             'This option is not required if --creator-name-personal is provided. '
             'The combination of name and email address depends on the order specified. '
             'If an extra email address is specified, it will be ignored'
@@ -595,7 +595,7 @@ def create_parser():
         type=str,
         action='append',
         help=(
-            'Add creator organization\'s name to the creator field in SBOM'
+            'The organization(s) who creat SBOM'
         ),
         required=False,
         default=[],
@@ -605,10 +605,10 @@ def create_parser():
         type=str,
         action='append',
         help=(
-            'Add creator organization\'s email address. '
+            'The email address of SBOM creator. '
             'This option is not required if --creator-name-org is provided. '
             'The combination of name and email address depends on the order specified. '
-            'If an extra email address is specified, it will be ignored'
+            'If an extra email address is specified, it will be ignored.'
         ),
         required=False,
         default=[],
