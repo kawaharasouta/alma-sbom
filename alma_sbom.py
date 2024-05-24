@@ -239,6 +239,47 @@ def add_package_source_info(immudb_metadata: Dict, component: Dict):
         )
 
 
+def add_build_info(
+    immudb_metadata: Dict, 
+    component: Dict,
+    albs_url: str,
+):
+    component['properties'].extend(
+        [
+            {
+                'name': 'almalinux:package:buildhost',
+                'value': immudb_metadata['build_host']
+                if 'build_host' in immudb_metadata
+                else None,
+            },
+            {
+                'name': 'almalinux:albs:build:targetArch',
+                'value': immudb_metadata['build_arch']
+                if 'build_arch' in immudb_metadata
+                else None,
+            },
+            {
+                'name': 'almalinux:albs:build:ID',
+                'value': immudb_metadata['build_id']
+                if 'build_id' in immudb_metadata
+                else None,
+            },
+            {
+                'name': 'almalinux:albs:build:URL',
+                'value': f'{albs_url}/build/{immudb_metadata["build_id"]}'
+                if 'build_id' in immudb_metadata
+                else None,
+            },
+            {
+                'name': 'almalinux:albs:build:author',
+                'value': immudb_metadata['built_by']
+                if 'built_by' in immudb_metadata
+                else None,
+            },
+        ]
+    )
+
+
 def get_info_about_package(
     immudb_hash: str,
     albs_url: str,
@@ -296,16 +337,8 @@ def get_info_about_package(
                 'value': source_rpm,
             },
             {
-                'name': 'almalinux:package:buildhost',
-                'value': immudb_metadata['build_host'],
-            },
-            {
                 'name': 'almalinux:package:timestamp',
                 'value': immudb_info_about_package['timestamp'],
-            },
-            {
-                'name': 'almalinux:albs:build:targetArch',
-                'value': immudb_metadata['build_arch'],
             },
             {
                 'name': 'almalinux:albs:build:packageType',
@@ -315,21 +348,13 @@ def get_info_about_package(
                 'name': 'almalinux:sbom:immudbHash',
                 'value': immudb_hash,
             },
-            {
-                'name': 'almalinux:albs:build:ID',
-                'value': immudb_metadata['build_id'],
-            },
-            {
-                'name': 'almalinux:albs:build:URL',
-                'value': f'{albs_url}/build/{immudb_metadata["build_id"]}',
-            },
-            {
-                'name': 'almalinux:albs:build:author',
-                'value': immudb_metadata['built_by'],
-            },
         ],
     }
-
+    add_build_info(
+        immudb_metadata=immudb_metadata,
+        component=result['component'],
+        albs_url=albs_url,
+    )
     add_package_source_info(
         immudb_metadata=immudb_metadata,
         component=result['component'],
@@ -421,14 +446,6 @@ def get_info_about_build(
                         'value': source_rpm,
                     },
                     {
-                        'name': 'almalinux:package:buildhost',
-                        'value': immudb_metadata['build_host'],
-                    },
-                    {
-                        'name': 'almalinux:albs:build:targetArch',
-                        'value': immudb_metadata['build_arch'],
-                    },
-                    {
                         'name': 'almalinux:albs:build:packageType',
                         'value': 'rpm',
                     },
@@ -437,19 +454,16 @@ def get_info_about_build(
                         'value': result_of_execution['Hash'],
                     },
                     {
-                        'name': 'almalinux:albs:build:ID',
-                        'value': build_id,
-                    },
-                    {
                         'name': 'almalinux:albs:build:URL',
                         'value': build_url,
                     },
-                    {
-                        'name': 'almalinux:albs:build:author',
-                        'value': immudb_metadata['built_by'],
-                    },
                 ],
             }
+            add_build_info(
+                immudb_metadata=immudb_metadata,
+                component=component,
+                albs_url=albs_url,
+            )
             add_package_source_info(
                 immudb_metadata=immudb_metadata,
                 component=component,
