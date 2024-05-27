@@ -239,7 +239,7 @@ def add_package_source_info(immudb_metadata: Dict, component: Dict):
         )
 
 
-def add_build_info(
+def add_package_build_info(
     immudb_metadata: Dict, 
     component: Dict,
     albs_url: str,
@@ -280,6 +280,80 @@ def add_build_info(
     )
 
 
+def add_package_info(
+    immudb_hash: str,
+    immudb_info_about_package: Dict, 
+    component: Dict,
+    albs_url: str,
+):
+    source_rpm, package_nevra = _get_specific_info_about_package(
+        immudb_info_about_package=immudb_info_about_package,
+    )
+    immudb_metadata = immudb_info_about_package['Metadata']
+
+    component['name'] = package_nevra.name
+    component['version'] = (
+        f'{package_nevra.epoch if package_nevra.epoch else ""}'
+        f'{":" if package_nevra.epoch else ""}'
+        f'{package_nevra.version}-{package_nevra.release}'
+    )
+    component['hashes'] = [
+        {
+            'alg': 'SHA-256',
+            'content': immudb_hash,
+        }
+    ]
+    component['cpe'] = _generate_cpe(package_nevra=package_nevra)
+    component['purl'] =  _generate_purl(
+        package_nevra=package_nevra,
+        source_rpm=source_rpm,
+    )
+    component['properties'] = [
+        {
+            'name': 'almalinux:package:epoch',
+            'value': package_nevra.epoch,
+        },
+        {
+            'name': 'almalinux:package:version',
+            'value': package_nevra.version,
+        },
+        {
+            'name': 'almalinux:package:release',
+            'value': package_nevra.release,
+        },
+        {
+            'name': 'almalinux:package:arch',
+            'value': package_nevra.arch,
+        },
+        {
+            'name': 'almalinux:package:sourcerpm',
+            'value': source_rpm,
+        },
+        {
+            'name': 'almalinux:package:timestamp',
+            'value': immudb_info_about_package['timestamp'],
+        },
+        {
+            'name': 'almalinux:albs:build:packageType',
+            'value': 'rpm',
+        },
+        {
+            'name': 'almalinux:sbom:immudbHash',
+            'value': immudb_hash,
+        },
+    ]
+
+    add_package_build_info(
+        immudb_metadata=immudb_metadata,
+        component=component,
+        albs_url=albs_url,
+    )
+    add_package_source_info(
+        immudb_metadata=immudb_metadata,
+        component=component,
+    )
+
+
 def get_info_about_package(
     immudb_hash: str,
     albs_url: str,
@@ -290,74 +364,16 @@ def get_info_about_package(
         immudb_hash=immudb_hash,
         immudb_wrapper=immudb_wrapper,
     )
-    source_rpm, package_nevra = _get_specific_info_about_package(
-        immudb_info_about_package=immudb_info_about_package,
-    )
     immudb_metadata = immudb_info_about_package['Metadata']
     result['version'] = 1
     if 'unsigned_hash' in immudb_metadata:
         result['version'] += 1
-    result['component'] = {
-        'name': package_nevra.name,
-        'version': (
-            f'{package_nevra.epoch if package_nevra.epoch else ""}'
-            f'{":" if package_nevra.epoch else ""}'
-            f'{package_nevra.version}-{package_nevra.release}'
-        ),
-        'hashes': [
-            {
-                'alg': 'SHA-256',
-                'content': immudb_hash,
-            }
-        ],
-        'cpe': _generate_cpe(package_nevra=package_nevra),
-        'purl': _generate_purl(
-            package_nevra=package_nevra,
-            source_rpm=source_rpm,
-        ),
-        'properties': [
-            {
-                'name': 'almalinux:package:epoch',
-                'value': package_nevra.epoch,
-            },
-            {
-                'name': 'almalinux:package:version',
-                'value': package_nevra.version,
-            },
-            {
-                'name': 'almalinux:package:release',
-                'value': package_nevra.release,
-            },
-            {
-                'name': 'almalinux:package:arch',
-                'value': package_nevra.arch,
-            },
-            {
-                'name': 'almalinux:package:sourcerpm',
-                'value': source_rpm,
-            },
-            {
-                'name': 'almalinux:package:timestamp',
-                'value': immudb_info_about_package['timestamp'],
-            },
-            {
-                'name': 'almalinux:albs:build:packageType',
-                'value': 'rpm',
-            },
-            {
-                'name': 'almalinux:sbom:immudbHash',
-                'value': immudb_hash,
-            },
-        ],
-    }
-    add_build_info(
-        immudb_metadata=immudb_metadata,
+    result['component'] = {}
+    add_package_info(
+        immudb_hash=immudb_hash,
+        immudb_info_about_package=immudb_info_about_package,
         component=result['component'],
         albs_url=albs_url,
-    )
-    add_package_source_info(
-        immudb_metadata=immudb_metadata,
-        component=result['component'],
     )
     return result
 
@@ -407,66 +423,12 @@ def get_info_about_build(
                 immudb_wrapper=immudb_wrapper,
             )
             immudb_metadata = result_of_execution['Metadata']
-            source_rpm, package_nevra = _get_specific_info_about_package(
+            component = {}
+            add_package_info(
+                immudb_hash=immudb_hash,
                 immudb_info_about_package=result_of_execution,
-            )
-            component = {
-                'name': package_nevra.name,
-                'version': package_nevra.version,
-                'cpe': _generate_cpe(package_nevra=package_nevra),
-                'purl': _generate_purl(
-                    package_nevra=package_nevra,
-                    source_rpm=source_rpm,
-                ),
-                'hashes': [
-                    {
-                        'alg': 'SHA-256',
-                        'content': immudb_hash,
-                    }
-                ],
-                'properties': [
-                    {
-                        'name': 'almalinux:package:epoch',
-                        'value': package_nevra.epoch,
-                    },
-                    {
-                        'name': 'almalinux:package:version',
-                        'value': package_nevra.version,
-                    },
-                    {
-                        'name': 'almalinux:package:release',
-                        'value': package_nevra.release,
-                    },
-                    {
-                        'name': 'almalinux:package:arch',
-                        'value': package_nevra.arch,
-                    },
-                    {
-                        'name': 'almalinux:package:sourcerpm',
-                        'value': source_rpm,
-                    },
-                    {
-                        'name': 'almalinux:albs:build:packageType',
-                        'value': 'rpm',
-                    },
-                    {
-                        'name': 'almalinux:sbom:immudbHash',
-                        'value': result_of_execution['Hash'],
-                    },
-                    {
-                        'name': 'almalinux:albs:build:URL',
-                        'value': build_url,
-                    },
-                ],
-            }
-            add_build_info(
-                immudb_metadata=immudb_metadata,
                 component=component,
                 albs_url=albs_url,
-            )
-            add_package_source_info(
-                immudb_metadata=immudb_metadata,
-                component=component,
             )
             components.append(component)
     result['components'] = components
