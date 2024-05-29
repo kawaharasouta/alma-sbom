@@ -1,6 +1,7 @@
 import json
 import logging
 import xml.dom.minidom
+import os
 
 from cyclonedx.model import HashAlgorithm, HashType, Property
 from cyclonedx.model.bom import Bom, Tool
@@ -25,8 +26,10 @@ class SBOM:
     def run(self):
         if self.sbom_object_type == 'build':
             self.generate_build_sbom()
-        else:
+        elif self.sbom_object_type == 'package':
             self.generate_package_sbom()
+        else: # self.sbom_object_type == 'deploy'
+            self.generate_deploy_sbom()
 
         output = get_instance(bom=self._bom, output_format=self.output_format)
 
@@ -139,3 +142,22 @@ class SBOM:
         self._bom.metadata.component = self.__generate_package_component(
             self.input_data['component'],
         )
+
+    def generate_deploy_sbom(self):
+        input_components = self.input_data['components']
+        # We do this way to keep cyclonedx-python-lib as a tool
+        for tool in constants.TOOLS:
+            self._bom.metadata.tools.add(self.__generate_tool(tool))
+
+        component = Component(
+            component_type=ComponentType('operating-system'),
+            name='AlmaLinux',
+            author=os.getlogin(),
+            # properties=properties,
+        )
+        self._bom.metadata.component = component
+
+        # We do this way because Bom.components is not just a list
+        for component in input_components:
+            comp = self.__generate_package_component(component)
+            self._bom.components.add(comp)

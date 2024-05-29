@@ -6,6 +6,7 @@ import dataclasses
 import logging
 import os
 import sys
+import subprocess
 from collections import defaultdict
 from typing import Dict, List, Literal, Optional, Tuple
 
@@ -441,6 +442,31 @@ def get_info_about_build(
     result['components'] = components
     return result
 
+def get_info_about_deploy(
+    albs_url: str,
+    immudb_wrapper: ImmudbWrapper,
+    tmpdir: str,
+):
+    result = {}
+    components = []
+
+    for file in os.listdir(tmpdir):
+        immudb_info_about_package = _extract_immudb_info_about_package(
+            immudb_wrapper=immudb_wrapper,
+            rpm_package=f'{tmpdir}/{file}',
+        )
+        immudb_hash = immudb_wrapper.hash_file(f'{tmpdir}/{file}')
+        component = {}
+        add_package_info(
+            immudb_hash=immudb_hash,
+            immudb_info_about_package=immudb_info_about_package,
+            component=component,
+            albs_url=albs_url,
+        )
+        components.append(component)
+
+    result['components'] = components
+    return result
 
 def create_parser():
     parser = argparse.ArgumentParser()
@@ -479,6 +505,23 @@ def create_parser():
         '--rpm-package',
         type=str,
         help='path to an RPM package',
+    )
+    object_id_group.add_argument(
+        '--deploy',
+        action='store_true',
+        help='make deploy sbom',
+    )
+    parser.add_argument(
+        '--rpmdb',
+        type=str,
+        help=(
+            'make deploy sbom '
+            'path to rpmdb '
+            'default /var/lib/rpm '
+            'this option needed when --deploy '
+            'this must be absolute path'
+        ),
+        default='/var/lib/rpm',
     )
     parser.add_argument(
         '--albs-url',
@@ -578,7 +621,7 @@ def cli_main():
             immudb_wrapper=immudb_wrapper,
         )
         sbom_object_type = 'build'
-    else:
+    elif args.rpm_package_hash or args.rpm_package:
         sbom = get_info_about_package(
             albs_url=albs_url,
             immudb_wrapper=immudb_wrapper,
@@ -586,6 +629,29 @@ def cli_main():
             rpm_package=args.rpm_package,
         )
         sbom_object_type = 'package'
+    else: ### args.deploy == True
+        print(f'deploy sbom. deploy={args.deploy}')
+        ret = subprocess.run(
+            ['rpm', '-qa', '--dbpath', args.rpmdb],
+            stdout=subprocess.PIPE,
+        )
+        ret = subprocess.run(
+            ['grep', '-v', 'gpg-pubkey'],
+            input=ret.stdout.decode(),
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        pkg_list = ret.stdout.split()
+        tmpdir = f'{os.getcwd()}/tmp'
+        ret = subprocess.run(
+            ['dnf', 'download', '--downloaddir', tmpdir , *pkg_list],
+        )
+        sbom = get_info_about_deploy(
+            albs_url=albs_url,
+            immudb_wrapper=immudb_wrapper,
+            tmpdir=tmpdir,
+        )
+        sbom_object_type = 'deploy'
 
     sbom_formatter = formatters[args.file_format.sbom_record_type](
         data=sbom,
