@@ -515,11 +515,9 @@ def create_parser():
         '--rpmdb',
         type=str,
         help=(
-            'make deploy sbom '
             'path to rpmdb '
             'default /var/lib/rpm '
-            'this option needed when --deploy '
-            'this must be absolute path'
+            'this option needed when --deploy'
         ),
         default='/var/lib/rpm',
     )
@@ -630,9 +628,12 @@ def cli_main():
         )
         sbom_object_type = 'package'
     else: ### args.deploy == True
-        print(f'deploy sbom. deploy={args.deploy}')
+        abspath_rpmdb = os.path.abspath(args.rpmdb)
+        if not os.path.exists(abspath_rpmdb):
+            logging.error(f'File {abspath_rpmdb} Not Found')
+            sys.exit(1)
         ret = subprocess.run(
-            ['rpm', '-qa', '--dbpath', args.rpmdb],
+            ['rpm', '-qa', '--dbpath', abspath_rpmdb],
             stdout=subprocess.PIPE,
         )
         ret = subprocess.run(
