@@ -16,7 +16,8 @@ These utilities consist in:
 
 ## Getting started
 
-1. Create a Python Virtual Environment: `python3.9 -m venv env`
+0. Install needed package(almost all system already installed):`dnf install python3-rpm`
+1. Create a Python Virtual Environment: `python3.9 -m venv env --system-site-packages`
 2. Activate the Virtual Environment: `source env/bin/activate`
 3. Install dependencies: `pip install .`
 

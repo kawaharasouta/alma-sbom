@@ -5,6 +5,7 @@ import argparse
 import dataclasses
 import os
 import sys
+import rpm
 from logging import basicConfig, getLogger, DEBUG, INFO, WARNING
 from collections import defaultdict
 from typing import Dict, List, Literal, Optional, Tuple
@@ -245,6 +246,27 @@ def add_package_source_info(immudb_metadata: Dict, component: Dict):
             ]
         )
 
+def add_rpm_package_info(
+    component: Dict, 
+    rpm_package: str = None,
+):
+
+    if not rpm_package:
+        return
+
+    ts = rpm.TransactionSet()
+    fd = os.open(rpm_package, os.O_RDONLY)
+    hdr = ts.hdrFromFdno(fd)
+    os.close(fd)
+
+    component['licenses'] = [
+        {
+            'expression': hdr[rpm.RPMTAG_LICENSE],
+        },
+    ]
+
+    
+
 
 def get_info_about_package(
     albs_url: str,
@@ -344,6 +366,10 @@ def get_info_about_package(
     add_package_source_info(
         immudb_metadata=immudb_metadata,
         component=result['metadata']['component'],
+    )
+    add_rpm_package_info(
+        component=result['metadata']['component'],
+        rpm_package=rpm_package,
     )
     return result
 

@@ -2,7 +2,7 @@ import json
 import xml.dom.minidom
 from logging import getLogger
 
-from cyclonedx.model import HashAlgorithm, HashType, Property
+from cyclonedx.model import HashAlgorithm, HashType, Property, LicenseChoice
 from cyclonedx.model.bom import Bom, Tool
 from cyclonedx.model.component import Component, ComponentType
 from cyclonedx.output import OutputFormat, get_instance
@@ -85,6 +85,12 @@ class SBOM:
             hash_value=hash_['content'],
         )
 
+    @staticmethod
+    def __generate_licenses(license_):
+        return LicenseChoice(
+            license_expression=license_['expression'],
+        )
+
     def __generate_package_component(self, comp):
         purl = common.normalize_epoch_in_purl(comp['purl'])
         return Component(
@@ -97,6 +103,9 @@ class SBOM:
             purl=PackageURL.from_string(purl),
             properties=[
                 self.__generate_prop(prop) for prop in comp['properties']
+            ],
+            licenses=[
+                self.__generate_licenses(l) for l in comp['licenses']
             ],
         )
 
