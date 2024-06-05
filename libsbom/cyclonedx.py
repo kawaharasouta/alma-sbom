@@ -106,7 +106,7 @@ class SBOM:
             ],
             licenses=[
                 self.__generate_licenses(l) for l in comp['licenses']
-            ],
+            ] if 'licenses' in comp and comp['licenses'] else [] ,
         )
 
     def generate_build_sbom(self):
