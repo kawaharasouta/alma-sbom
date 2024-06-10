@@ -86,10 +86,15 @@ class SBOM:
         )
 
     @staticmethod
-    def __generate_licenses(license_):
-        return LicenseChoice(
-            license_expression=license_['expression'],
-        )
+    def __generate_licenses(_license):
+        l = []
+        if 'ids' in _license and _license['ids']:
+            for lid in _license['ids']:
+                l.append( LicenseChoice(license_=lid) )
+
+        elif 'expression' in _license and _license['expression']:
+            l.append( LicenseChoice(license_expression=_license['expression']) )
+        return l
 
     def __generate_package_component(self, comp):
         purl = common.normalize_epoch_in_purl(comp['purl'])
@@ -104,9 +109,8 @@ class SBOM:
             properties=[
                 self.__generate_prop(prop) for prop in comp['properties']
             ],
-            licenses=[
-                self.__generate_licenses(l) for l in comp['licenses']
-            ] if 'licenses' in comp and comp['licenses'] else [] ,
+            licenses=self.__generate_licenses(comp['licenses'])
+                if 'licenses' in comp and comp['licenses'] else [] ,
         )
 
     def generate_build_sbom(self):
