@@ -6,6 +6,7 @@ import dataclasses
 import os
 import sys
 import rpm
+import magic
 from logging import basicConfig, getLogger, DEBUG, INFO, WARNING
 from collections import defaultdict
 from typing import Dict, List, Literal, Optional, Tuple
@@ -520,6 +521,17 @@ def get_info_about_build(
     return result
 
 
+# def is_rpm(rpm_package: str):
+def is_rpm(rpm_package):
+    try:
+        file_magic = magic.detect_from_filename(rpm_package)
+        if file_magic.mime_type == 'application/x-rpm':
+            return rpm_package
+        else:
+            raise argparse.ArgumentTypeError(f"{rpm_package} is not an RPM package")
+    except Exception as err:
+        raise argparse.ArgumentTypeError(f"Error reading file {rpm_package}: {err}")
+
 def create_parser():
     parser = argparse.ArgumentParser()
 
@@ -555,7 +567,7 @@ def create_parser():
     )
     object_id_group.add_argument(
         '--rpm-package',
-        type=str,
+        type=is_rpm,
         help='path to an RPM package',
     )
     parser.add_argument(
