@@ -290,6 +290,8 @@ def add_rpm_package_info(
             pass
 
     component['licenses'] = _proc_licenses(hdr[rpm.RPMTAG_LICENSE])
+    component['summary'] = hdr[rpm.RPMTAG_SUMMARY]
+    component['description'] = hdr[rpm.RPMTAG_DESCRIPTION]
 
 def get_info_about_package(
     albs_url: str,
