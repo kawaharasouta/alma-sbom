@@ -41,6 +41,7 @@ def normalize_epoch_in_cpe(cpe: str) -> str:
     patterns = {
         ':None\\:':   ':0\\:',
         ':(none)\\:': ':0\\:',
+        '+': '\\+',
     }
 
     return replace_patterns(input_str=cpe,
